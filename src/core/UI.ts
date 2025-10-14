@@ -11,7 +11,7 @@ export class UI {
 		hud.style.top = "10px";
 		hud.style.color = "white";
 		hud.style.fontFamily = "sans-serif";
-		hud.innerHTML = "<strong>Everscape</strong> - Phase 1";
+		hud.innerHTML = "<strong>Everscape</strong> - Phase 2";
 		document.body.appendChild(hud);
     
 		// FPS counter

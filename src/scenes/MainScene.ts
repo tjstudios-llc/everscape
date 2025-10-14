@@ -15,7 +15,7 @@ import {
 import { Environment } from "../core/Environment";
 import { Player } from "../core/Player";
 import { UI } from "../core/UI";
-
+import { CameraController } from "../core/CameraController";
 /**
  * MainScene - builds the 3D scene and implements the day/night cycle
  * - Uses a heightmap from a public CDN for the terrain
@@ -24,9 +24,21 @@ import { UI } from "../core/UI";
  */
 export class MainScene {
   static async create(scene: Scene, engine: Engine, canvas: HTMLCanvasElement) {
-    // Camera: ArcRotate for orbiting and simple mouse control
-    const camera = new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 3, 60, Vector3.Zero(), scene);
-    camera.attachControl(canvas, true);
+  // Camera: ArcRotate for player following
+  // Start with camera looking above and behind the player
+  const camera = new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2.5, 8, Vector3.Zero(), scene);
+  camera.attachControl(canvas, true);
+  camera.lowerRadiusLimit = 0.1;  // Allow close zoom for first-person
+  camera.upperRadiusLimit = 20;   // Limit max zoom out
+  camera.lowerBetaLimit = 0.3;    // Prevent looking too far up
+  camera.upperBetaLimit = Math.PI / 1.2; // Prevent looking too far down
+  camera.panningDistanceLimit = 0; // Disable panning
+
+  // Create CameraController and link to player
+  const cameraController = new CameraController(camera, scene);
+
+  // Create player and link camera controller
+  const player = Player.create(scene, cameraController);
 
     // Ambient hemisphere light
     const hemi = new HemisphericLight("hemiLight", new Vector3(0, 1, 0), scene);
@@ -38,9 +50,6 @@ export class MainScene {
 
     // Environment (ground & skybox)
     const env = await Environment.create(scene);
-
-  // Player placeholder (pass camera so movement is camera-relative)
-  const player = Player.create(scene, camera as ArcRotateCamera);
 
     // Simple shadows from sun (tuned for low-end hardware)
     // Use a low-res shadow map and avoid expensive ESM/PCF on low-end devices
@@ -56,8 +65,9 @@ export class MainScene {
     }
 
     const shadowGen = new ShadowGenerator(shadowMapSize, sun);
-    shadowGen.useBlurExponentialShadowMap = useBlur;
-    shadowGen.addShadowCaster(player.mesh);
+  shadowGen.useBlurExponentialShadowMap = useBlur;
+  // Add player as shadow caster if mesh exists
+  if (player && player.mesh) shadowGen.addShadowCaster(player.mesh);
     if (env.ground) env.ground.receiveShadows = true;
 
     // UI placeholder
@@ -116,12 +126,9 @@ export class MainScene {
       lastTime = nowTime;
       const deltaSeconds = deltaMs / 1000;
 
-      // Update player movement
-      try {
-        (player as any).update(deltaSeconds);
-      } catch (e) {
-        // ignore update errors in dev
-      }
+  // Update player movement and camera follow
+  player.update(deltaSeconds);
+  // CameraController will recenter above and behind the player in the direction of movement
 
       // Compute targets and interpolate
       const targets = computeTargets();
