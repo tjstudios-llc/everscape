@@ -1,7 +1,6 @@
 {
   "name": "everscape",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -20,5 +19,9 @@
     "typescript": "^5.9.3",
     "vite": "^7.1.9"
   },
-  "description": ""
+  "description": "Everscape — a Babylon.js 3D mountain exploration world",
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  }
 }
